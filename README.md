@@ -38,7 +38,8 @@ dsh plugin --profile web add https://github.com/saul-dsh/dsh-siri-voice
 ## 实现要点
 
 - 纯客户端插件：服务端入口只有一个空的 `apply`，作用是让宿主扫描到 `dsh.client.platform = 'web'`。
-- 视觉层注册在 `conversation.input.dock`；因为 dock 行高很小，浮层用 `position: fixed`，每帧按父容器位置贴到输入框正上方。
+- 视觉层注册在 `conversation.input.dock`；每帧取「编辑器 + 语音栏」的最小公共祖先（即输入框卡片本身）的矩形与圆角，用 `position: fixed` 严丝合缝盖在卡片上，不做外扩。
+- 录音时内置的点状声纹被 CSS 隐藏（仍占位，取消/停止按钮不动），画布直接画在它原来的格子里，相当于接管了那条声纹。
 - 音量来自本插件自己的 `getUserMedia + AnalyserNode`（权限已由内置按钮授予，不会二次弹窗）；拿不到音频时退化为缓慢呼吸动画，不报错。
 - 不使用 WebGL、不引入第三方依赖，只用一个 canvas。
 

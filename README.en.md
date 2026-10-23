@@ -2,7 +2,7 @@
 
 English | [简体中文](README.md)
 
-A **Siri-style voice visualizer** for the [DeepSeek Harness (dsh)](https://github.com/deepseek-ai/deepseek-harness) composer: when you start dictating, a glowing band floats above the input — a rotating conic-gradient running light around the edge, with three layers of waves driven by your microphone level.
+A **Siri-style voice visualizer** for the [DeepSeek Harness (dsh)](https://github.com/deepseek-ai/deepseek-harness) composer: when you start dictating, a glowing layer covers the input card — a rotating conic-gradient running light around its edge, with three layers of waves drawn exactly where the built-in dot waveform used to be.
 
 ```
 click mic → recording starts → glowing waves appear above the composer → transcript lands in the draft as usual
@@ -27,7 +27,8 @@ The built-in voice-input bundle (`@deepseek-ai/dsh-experimental-voice-input-bund
 ## How it works
 
 - Client-only plugin: the server half is an empty `apply`, present so the host loader scans `dsh.client.platform = 'web'`.
-- The visualizer registers on `conversation.input.dock`; since that row is only ~20px tall, the band is `position: fixed` and re-anchored to the composer every frame.
+- The visualizer registers on `conversation.input.dock`; every frame it takes the smallest common ancestor of the editor and the voice row (the composer card itself) and matches its rect and corner radius exactly.
+- The built-in dot waveform is hidden with CSS while recording (it keeps its layout box, so the cancel/stop buttons do not move) and the canvas draws in that same slot, effectively replacing it.
 - Level comes from this plugin's own `getUserMedia + AnalyserNode` (permission already granted by the built-in button, so no second prompt). Without audio it degrades to a slow breathing animation.
 - No WebGL, no third-party dependencies — one canvas.
 
