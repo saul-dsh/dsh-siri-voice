@@ -1,0 +1,46 @@
+{
+  "name": "dsh-siri-voice",
+  "version": "0.1.0",
+  "description": "Siri-style running-light visualizer for the DeepSeek Harness (dsh) composer: a glowing wave band appears above the input while voice recording is active.",
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "cordis.patch.yml",
+    "README.md",
+    "README.en.md"
+  ],
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "voice",
+    "visualizer",
+    "siri",
+    "cordis"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/saul-dsh/dsh-siri-voice.git"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "*"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web"
+    }
+  }
+}
