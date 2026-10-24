@@ -29,6 +29,10 @@
     "type": "git",
     "url": "git+https://github.com/saul-dsh/dsh-siri-voice.git"
   },
+  "homepage": "https://github.com/saul-dsh/dsh-siri-voice#readme",
+  "bugs": {
+    "url": "https://github.com/saul-dsh/dsh-siri-voice/issues"
+  },
   "engines": {
     "node": ">=18"
   },

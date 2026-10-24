@@ -85,13 +85,17 @@ window.__ModuleLoader__.load({
   position: relative;
 }
 [data-voice-activity] .dsh-siri-stop {
-  /* 跟随宿主主题的工具栏底色，深色主题下不再是刺眼的白圆；
-     竖条用 currentColor，直接继承按钮原本的文字色。 */
-  background: var(--dsw-alias-button-tool-bar-fill, rgba(255, 255, 255, 0.08)) !important;
+  /* 和旁边 +、模型等工具栏按钮保持一致：默认透明，悬停才出现一层浅底；
+     竖条用次级文字色，比正文的白更收敛。 */
+  background: transparent !important;
+  color: var(--dsw-alias-label-secondary, rgba(232, 238, 250, 0.72)) !important;
   box-shadow: none !important;
   animation: none !important;
   transform-origin: center center;
   transition: background 120ms ease;
+}
+[data-voice-activity] .dsh-siri-stop:hover {
+  background: var(--dsw-alias-interactive-bg-hover, rgba(255, 255, 255, 0.08)) !important;
 }
 [data-voice-activity] .dsh-siri-stop > svg { visibility: hidden !important; }
 .dsh-siri-bars {

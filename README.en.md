@@ -2,6 +2,12 @@
 
 English | [简体中文](README.md)
 
+[![License: MIT](https://img.shields.io/badge/license-MIT-3da639.svg)](LICENSE)
+[![version](https://img.shields.io/badge/version-0.1.0-blue.svg)](https://github.com/saul-dsh/dsh-siri-voice/releases)
+[![dsh](https://img.shields.io/badge/dsh-%E2%89%A50.2.0-5b8def.svg)](https://github.com/deepseek-ai/deepseek-harness)
+[![Node](https://img.shields.io/badge/node-%E2%89%A518-339933.svg)](https://nodejs.org)
+[![CI](https://github.com/saul-dsh/dsh-siri-voice/actions/workflows/ci.yml/badge.svg)](https://github.com/saul-dsh/dsh-siri-voice/actions)
+
 A **Siri-style voice visualizer** for the [DeepSeek Harness (dsh)](https://github.com/deepseek-ai/deepseek-harness) composer: when you start dictating, a glowing layer covers the input card — a rotating conic-gradient running light around its edge, with three layers of waves drawn exactly where the built-in dot waveform used to be.
 
 ```
