@@ -195,6 +195,84 @@ svg[viewBox="0 0 640 40"] { visibility: hidden !important; }
       return phase
     }
 
+    /* ---------------------------------------------------------------- */
+    /* 转写清理：去语气词、合并重复字词、修停顿造成的句号                    */
+    /* ---------------------------------------------------------------- */
+
+    // 语气词只在行首或标点后删除，避免误伤「啊」作叹词、「呢」作疑问助词的情况。
+    const FILLERS = '嗯呃额唔哦诶唉'
+    const LEADING_FILLER = new RegExp(`^([${FILLERS}]+)[，,、\\s]*`, 'gm')
+    const MID_FILLER = new RegExp(`([，。！？、])([${FILLERS}]+)(?=[^，。！？、])`, 'g')
+    // 夹在汉字中间的语气词只处理「嗯呃额唔」这类纯填充音。
+    // 「啊哦诶唉」放进来会把「好啊我们走」改成「好我们走」，太危险。
+    const INLINE_FILLER = /([\u4e00-\u9fa5])([嗯呃额唔]+)(?=[\u4e00-\u9fa5])/g
+    // 句首的「那个，」是典型的口头填充，但「那个文件」是指示代词，所以限定后面跟逗号。
+    const LEADING_DEMONSTRATIVE = /^那个[，,]\s*/gm
+    // 同字三连以上（「我我我」）。两连保留，因为「看看」「刚刚」是合法叠词。
+    const TRIPLE_CHAR = /([\u4e00-\u9fa5])\1{2,}/g
+    // 两三个字的词连续重复（「这个这个」）。
+    const DUP_WORD = /([\u4e00-\u9fa5]{2,3})\1+/g
+
+    /**
+     * 说话时停顿会把一句话切成一串短句：「我今天。想去公园。带上相机。」
+     * 整段没有逗号、平均句长又很短，才判定为停顿碎片，把中间的句号换成逗号。
+     * 正常短句（已经有逗号，或者句子够长）不动。
+     */
+    function mergePausePeriods(text) {
+      const parts = text.split(/(?<=[。！？])/).filter((part) => part.length > 0)
+      if (parts.length < 2) return text
+      if (/[，,]/.test(text)) return text
+      if (text.length / parts.length > 12) return text
+      return parts.join('').replace(/。(?=.)/g, '，')
+    }
+
+    /** 清理一段转写文本；结果为空或改动过大时放弃，宁可保留原样。 */
+    function cleanTranscript(text) {
+      const source = typeof text === 'string' ? text : ''
+      if (source.length < 2) return source
+      const stripped = source
+        .replace(LEADING_FILLER, '')
+        // 放在语气词之后：「呃，那个，我」要先删掉「呃，」，「那个」才落到行首。
+        .replace(LEADING_DEMONSTRATIVE, '')
+        .replace(MID_FILLER, '$1')
+        .replace(INLINE_FILLER, '$1')
+        .replace(TRIPLE_CHAR, '$1')
+        .replace(DUP_WORD, '$1')
+        .replace(/[ \t]{2,}/g, ' ')
+        .trim()
+      const out = mergePausePeriods(stripped)
+      // 改动超过 40% 说明规则失控了，放弃清理。
+      if (out.length === 0 || Math.abs(out.length - source.length) > source.length * 0.4) return source
+      return out
+    }
+
+    /**
+     * 转写落地后清理草稿。
+     * 时序：内置插件先 insertText 再 setPhase('idle')，所以看到 transcribing → null
+     * 之后还要等一拍，草稿状态才同步过来。
+     */
+    function useTranscriptCleanup(phase, draft, inputActions) {
+      const draftRef = React.useRef('')
+      draftRef.current = typeof draft === 'string' ? draft : ''
+      const previous = React.useRef(phase)
+
+      React.useEffect(() => {
+        const from = previous.current
+        previous.current = phase
+        if (from !== 'transcribing' || phase !== null || !inputActions) return
+        const timer = setTimeout(() => {
+          const text = draftRef.current
+          if (!text.trim()) return
+          const cleaned = cleanTranscript(text)
+          if (cleaned !== text) {
+            console.info('[dsh-siri-voice] transcript cleaned', text.length, '->', cleaned.length)
+            inputActions.setDraft(cleaned)
+          }
+        }, 180)
+        return () => clearTimeout(timer)
+      }, [phase, inputActions])
+    }
+
     const LAYERS = [
       { amplitude: 1, frequency: 1.5, speed: 1.35, width: 2.8, alpha: 0.95, rgb: '96, 150, 255' },
       { amplitude: 0.62, frequency: 2.4, speed: 1.9, width: 2.0, alpha: 0.7, rgb: '168, 118, 255' },
@@ -427,8 +505,10 @@ svg[viewBox="0 0 640 40"] { visibility: hidden !important; }
     }
 
     /** 输入框上方的跑马灯：点火 / 录音 / 转写三个阶段各有自己的状态。 */
-    function SiriVoiceBand() {
+    function SiriVoiceBand({ useInput, inputActions }) {
       const phase = useVoicePhase()
+      const draft = useInput((state) => state.draft)
+      useTranscriptCleanup(phase, draft, inputActions)
       const bandRef = React.useRef(null)
       const canvasRef = React.useRef(null)
       useVisualizer(bandRef, canvasRef, phase)

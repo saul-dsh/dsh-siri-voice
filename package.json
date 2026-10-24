@@ -1,7 +1,7 @@
 {
   "name": "dsh-siri-voice",
-  "version": "0.1.0",
-  "description": "Siri-style running-light visualizer for the DeepSeek Harness (dsh) composer: a glowing wave band appears above the input while voice recording is active.",
+  "version": "0.2.0",
+  "description": "Siri-style running-light visualizer for the DeepSeek Harness (dsh) composer, plus rule-based cleanup of dictated transcripts (fillers, repeats, pause periods).",
   "type": "module",
   "main": "index.js",
   "exports": {

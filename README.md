@@ -3,20 +3,24 @@
 [English](README.en.md) | 简体中文
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-3da639.svg)](LICENSE)
-[![version](https://img.shields.io/badge/version-0.1.0-blue.svg)](https://github.com/saul-dsh/dsh-siri-voice/releases)
+[![version](https://img.shields.io/badge/version-0.2.0-blue.svg)](https://github.com/saul-dsh/dsh-siri-voice/releases)
 [![dsh](https://img.shields.io/badge/dsh-%E2%89%A50.2.0-5b8def.svg)](https://github.com/deepseek-ai/deepseek-harness)
 [![Node](https://img.shields.io/badge/node-%E2%89%A518-339933.svg)](https://nodejs.org)
 [![CI](https://github.com/saul-dsh/dsh-siri-voice/actions/workflows/ci.yml/badge.svg)](https://github.com/saul-dsh/dsh-siri-voice/actions)
 
-给 [DeepSeek Harness（dsh）](https://github.com/deepseek-ai/deepseek-harness)做的**语音输入跑马灯**：点开输入框的麦克风开始说话时，输入框上方浮出一条 Siri 风格的流光带——外圈旋转的渐变光，中间三层声波随你的音量起伏。
+给 [DeepSeek Harness（dsh）](https://github.com/deepseek-ai/deepseek-harness)做的**语音输入增强插件**，两件事：
+
+1. **跑马灯**：点开麦克风开始说话时，输入框上方浮出一条 Siri 风格的流光带——外圈旋转的渐变光，中间三层声波随你的音量起伏。
+2. **转写清理**：说完之后，把「嗯、呃、那个」这类语气词和重复的字词去掉，把停顿造成的碎句号改回逗号，再放进草稿。
 
 ```
-点麦克风  →  录音开始  →  输入框上方浮出流光波纹  →  停止后转写照常进入草稿
+点麦克风  →  流光波纹  →  停止转写  →  清理口语杂质  →  干净文本进入草稿
 ```
 
 ## 目录
 
 - [效果](#效果)
+- [转写清理](#转写清理)
 - [安装](#安装)
 - [依赖](#依赖)
 - [实现要点](#实现要点)
@@ -30,6 +34,28 @@
 - 录音中：渐变光带沿边缘跑动，浪高跟着麦克风音量实时变化。
 - 转写中：波形消失，光带保留，提示还在处理。
 - 结束或取消：光带瞬间消失，不占任何布局。
+
+## 转写清理
+
+语音转写会把口语原样落进草稿，直接发出去很难看。插件在转写完成、文本进入草稿之后跑一遍规则清理，**纯本地正则，不调模型，零延迟零成本**。
+
+| 问题 | 处理 | 例子 |
+|---|---|---|
+| 语气词 | 删行首、标点后、汉字之间的「嗯呃额唔」 | 「嗯，我觉得」→「我觉得」 |
+| 口头填充「那个」 | 只删行首且后面紧跟逗号的 | 「那个，我想说」→「我想说」 |
+| 重复字 | 同字三连以上合并 | 「我我我觉得」→「我觉得」 |
+| 重复词 | 两三个字的词连续重复合并 | 「这个这个方案」→「这个方案」 |
+| 停顿碎句 | 整段没有逗号且平均句长很短时，中间句号改逗号 | 「我今天。想去公园。」→「我今天，想去公园。」 |
+
+**不动的**：
+
+- 叠词：「看看」「刚刚」「试试」是合法用法，不动
+- 指示代词：「那个文件」里的「那个」
+- 语气助词：「好啊」里的「啊」、「对吧」里的「吧」
+- 已经有逗号的正常句子
+- 正常长度的完整句子
+
+改动超过原长 40% 时判定规则失控，直接放弃清理保留原文。清理结果只写回草稿，**不会自动发送**，你可以继续改或者手动撤回。
 
 ## 安装
 
@@ -68,7 +94,7 @@ dsh plugin --profile web add https://github.com/saul-dsh/dsh-siri-voice
 | Node | ≥ 18 |
 | 客户端 | web（桌面端与浏览器） |
 | 前置插件 | `@deepseek-ai/dsh-experimental-voice-input-bundle` 需处于启用状态 |
-| 运行时依赖 | 无。只用原生 canvas 与 Web Audio API |
+| 运行时依赖 | 无。跑马灯用原生 canvas 与 Web Audio API，转写清理是纯正则 |
 
 dsh 升级后如果这个插件突然不显示，多半是语音输入 bundle 改名或 `data-voice-activity` 属性变了。录音功能本身不受影响。
 
@@ -84,6 +110,12 @@ dsh 升级后如果这个插件突然不显示，多半是语音输入 bundle �
 
 - 麦克风权限被拒绝，或系统里有别的应用独占了麦克风。此时退化为缓慢呼吸动画，不报错
 - 部分 Linux 发行版下 `getUserMedia` 拿不到音量，同样退化
+
+**转写出来了，但语气词还在**
+
+- 清理有 40% 改动上限保护，删太多会判定失控并放弃，保留原文
+- 整段被判为「正常句子」（已经有逗号，或者平均句长超过 12 字）时，停顿句号不会合并
+- 控制台有 `[dsh-siri-voice] transcript cleaned X -> Y` 记录，没有这行说明本次没触发清理
 
 **流光带位置偏了**
 
